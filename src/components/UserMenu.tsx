@@ -2,6 +2,7 @@
 
 import { useSession } from "../hooks/useSession";
 import { usePanel } from "../hooks/usePanel";
+import { useFotoDePerfil } from "../hooks/useFotoDePerfil";
 import { displayName, initials } from "../utils/apps";
 import { IconChevronDown, IconFlag, IconLogout, IconUser } from "./Icons";
 import { enlaceDeIncidencia } from "../utils/incidencias";
@@ -33,6 +34,8 @@ export function UserMenu({ perfilHref, incidenciasUrl, appId, appNombre }: {
 }) {
   const { user, signOut } = useSession();
   const panel = usePanel<HTMLDivElement, HTMLButtonElement>();
+  // La foto de la cuenta, si la tiene; si no, las iniciales de siempre.
+  const foto = useFotoDePerfil();
 
   if (!user) return null;
 
@@ -52,7 +55,12 @@ export function UserMenu({ perfilHref, incidenciasUrl, appId, appNombre }: {
           aria-hidden="true"
           className="dxd-avatar flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-secondary text-body font-bold text-primary md:h-9 md:w-9 md:bg-primary md:text-secondary"
         >
-          {initials(user)}
+          {foto ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={foto} alt="" className="h-full w-full rounded-full object-cover" />
+          ) : (
+            initials(user)
+          )}
         </span>
         <span className="hidden max-w-[160px] truncate text-body font-semibold md:block">{displayName(user)}</span>
         <IconChevronDown
@@ -68,7 +76,12 @@ export function UserMenu({ perfilHref, incidenciasUrl, appId, appNombre }: {
         >
           <div className="flex items-center gap-3 border-b border-primary/8 p-4">
             <span aria-hidden="true" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-body font-bold text-secondary">
-              {initials(user)}
+              {foto ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={foto} alt="" className="h-full w-full rounded-full object-cover" />
+              ) : (
+                initials(user)
+              )}
             </span>
             <span className="flex min-w-0 flex-col">
               <span className="truncate text-body font-semibold text-primary">{displayName(user)}</span>

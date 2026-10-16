@@ -20,6 +20,7 @@ export * from "./components/Icons";
 export { SessionProvider } from "./contexts/SessionContext";
 export { ModulesProvider } from "./contexts/ModulesContext";
 export { useSession } from "./hooks/useSession";
+export { useFotoDePerfil, avisarFotoCambiada, FOTO_CAMBIADA } from "./hooks/useFotoDePerfil";
 export { useModules } from "./hooks/useModules";
 export { LinkProvider, useLinkComponent } from "./contexts/LinkContext";
 export type { LinkComponent } from "./contexts/LinkContext";

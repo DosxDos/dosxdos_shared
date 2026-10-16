@@ -14,6 +14,8 @@ interface SessionValue {
   /** Mientras se comprueba: ni hay sesion ni se sabe que no la hay. */
   isResolving: boolean;
   signOut: () => void;
+  /** La direccion del modulo de acceso. La usa la cabecera para pedir la foto. */
+  authUrl: string;
 }
 
 export const SessionContext = createContext<SessionValue | null>(null);
@@ -90,8 +92,8 @@ export function SessionProvider({
   }, []);
 
   const value = useMemo(
-    () => ({ user, isResolving, signOut }),
-    [user, isResolving, signOut]
+    () => ({ user, isResolving, signOut, authUrl }),
+    [user, isResolving, signOut, authUrl]
   );
 
   return (
