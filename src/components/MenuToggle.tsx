@@ -19,7 +19,7 @@ export const MenuToggle = forwardRef<HTMLButtonElement, Props>(function MenuTogg
       ref={ref}
       type="button"
       {...rest}
-      className={`dxd-control group flex h-11 w-11 items-center justify-center rounded-full bg-secondary/10 text-secondary keyboard-focus-ring-inverse ${className}`}
+      className={`dxd-control group flex h-11 w-11 md:h-12 md:w-12 items-center justify-center rounded-full bg-secondary/10 text-secondary keyboard-focus-ring-inverse ${className}`}
     >
       <span aria-hidden="true" className="dxd-burger" data-open={open ? "" : undefined}>
         <span />

@@ -49,15 +49,15 @@ export function UserMenu({ perfilHref, incidenciasUrl, appId, appNombre }: {
         aria-controls="user-menu"
         aria-label={`Menú de ${displayName(user)}`}
         data-open={panel.isOpen ? "" : undefined}
-        className="dxd-control dxd-pill flex items-center rounded-full text-primary keyboard-focus-ring-inverse md:gap-2.5 md:bg-secondary md:py-1.5 md:pl-1.5 md:pr-3"
+        className="dxd-control dxd-pill flex items-center rounded-full text-primary keyboard-focus-ring-inverse md:gap-2.5 md:bg-secondary md:py-1 md:pl-1 md:pr-3"
       >
         <span
           aria-hidden="true"
-          className="dxd-avatar flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-secondary text-body font-bold text-primary md:h-9 md:w-9 md:bg-primary md:text-secondary"
+          className="dxd-avatar flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-secondary text-body font-bold text-primary md:bg-primary md:text-secondary"
         >
           {foto ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={foto} alt="" className="h-full w-full rounded-full object-cover" />
+            <img src={foto} alt="" className="h-full w-full rounded-full object-cover ring-2 ring-white" />
           ) : (
             initials(user)
           )}
