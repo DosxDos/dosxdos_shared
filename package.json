@@ -1,6 +1,6 @@
 {
   "name": "@dosxdos/ui",
-  "version": "0.16.0",
+  "version": "0.17.0",
   "private": true,
   "description": "Componentes compartidos entre los modulos de Dos por Dos, en Next o en Vite.",
   "type": "module",
