@@ -1,6 +1,6 @@
 {
   "name": "@dosxdos/shared",
-  "version": "0.17.1",
+  "version": "0.18.0",
   "private": true,
   "description": "Lo que comparten los modulos de Dos por Dos (cabecera, pie, sesion, paginas legales), en Next o en Vite.",
   "type": "module",
