@@ -23,7 +23,7 @@ const LinkContext = createContext<LinkComponent>(PlainLink);
  *
  * El paquete no sabe si esta en Next o en Vite, y no debe: importar `next/link`
  * aqui rompe cualquier aplicacion Vite. Cada aplicacion le da el suyo —en Next,
- * `TransitionLink` de `@dosxdos/ui/next`; en Vite, el `Link` de su router— y sin
+ * `TransitionLink` de `@dosxdos/shared/next`; en Vite, el `Link` de su router— y sin
  * darle ninguno usa un `<a>` normal.
  */
 export function LinkProvider({ component, children }: { component: LinkComponent; children: ReactNode }) {

@@ -62,7 +62,7 @@ function AppHeaderBase({ appName, perfilHref, portalUrl, children, incidenciasUr
       <img
         src="/assets/img/logos/logo_full_gris.svg"
         alt="Dos por Dos grupo Imagen"
-        className="hidden shrink-0 md:block md:h-10 lg:h-16"
+        className="hidden shrink-0 md:block md:h-10 lg:h-14"
       />
     </>
   );
@@ -73,7 +73,7 @@ function AppHeaderBase({ appName, perfilHref, portalUrl, children, incidenciasUr
 
   return (
     <header className="dxd-header sticky top-0 z-drawer bg-primary" aria-label={`Cabecera de ${appName}`}>
-      <div className="px-5 py-3.5 md:px-8 md:py-5 lg:px-16 lg:py-7">
+      <div className="px-5 py-3.5 md:px-8 md:py-4 lg:px-16 lg:py-6">
         <div className="flex items-center justify-between gap-3 md:gap-4">
           <div className="flex min-w-0 items-center gap-3 md:gap-4 lg:gap-6">
             {portal ? (

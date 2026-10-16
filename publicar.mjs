@@ -1,6 +1,6 @@
 import { execSync } from "child_process";
 import { existsSync, readdirSync, readFileSync, writeFileSync } from "fs";
-import { dirname, resolve } from "path";
+import { basename, dirname, resolve } from "path";
 import { fileURLToPath } from "url";
 
 /**
@@ -20,19 +20,26 @@ import { fileURLToPath } from "url";
 const AQUI = dirname(fileURLToPath(import.meta.url));
 
 /**
+ * El paquete se llamo `@dosxdos/ui` hasta la 0.18.0. Una aplicacion que todavia
+ * lo tenga con el nombre viejo tambien se actualiza, y se le quita ese nombre.
+ */
+const NOMBRES = ["@dosxdos/shared", "@dosxdos/ui"];
+
+/**
  * Las aplicaciones se BUSCAN, no se escriben aqui.
  *
  * Una lista a mano es una cosa mas que actualizar al crear un modulo, y la que
  * nadie recuerda: el modulo nuevo se quedaria con la version vieja del menu sin
  * que nada avisara. Se mira en las carpetas hermanas y se coge a quien tenga
- * `@dosxdos/ui` entre sus dependencias, que es la definicion exacta de "esto
+ * `@dosxdos/shared` (o el nombre viejo, `@dosxdos/ui`) entre sus dependencias,
+ * que es la definicion exacta de "esto
  * hay que actualizarlo".
  */
 function buscarAplicaciones() {
   const raiz = resolve(AQUI, "..");
 
   return readdirSync(raiz, { withFileTypes: true })
-    .filter((entrada) => entrada.isDirectory() && entrada.name !== "dosxdos_ui")
+    .filter((entrada) => entrada.isDirectory() && entrada.name !== basename(AQUI))
     .map((entrada) => resolve(raiz, entrada.name))
     .filter((ruta) => {
       const manifiesto = resolve(ruta, "package.json");
@@ -40,7 +47,7 @@ function buscarAplicaciones() {
 
       try {
         const paquete = JSON.parse(readFileSync(manifiesto, "utf8"));
-        return Boolean(paquete.dependencies?.["@dosxdos/ui"]);
+        return NOMBRES.some((nombre) => Boolean(paquete.dependencies?.[nombre]));
       } catch {
         // Un package.json ilegible no es asunto de este script.
         return false;
@@ -90,7 +97,7 @@ sh("git push origin main --tags");
 console.log(`· publicado ${etiqueta}`);
 
 // 2. Y a cada aplicacion que este al lado.
-const destino = `github:DosxDos/dosxdos_ui#${etiqueta}`;
+const destino = `github:DosxDos/dosxdos_shared#${etiqueta}`;
 const aplicaciones = buscarAplicaciones();
 
 if (aplicaciones.length === 0) {
@@ -105,7 +112,9 @@ for (const ruta of aplicaciones) {
   const nombre = ruta.split("/").pop();
 
   try {
-    sh(`npm install ${destino}`, ruta);
+    sh(`npm install @dosxdos/shared@${destino}`, ruta);
+    const suyo = JSON.parse(readFileSync(resolve(ruta, "package.json"), "utf8"));
+    if (suyo.dependencies?.["@dosxdos/ui"]) sh("npm uninstall @dosxdos/ui", ruta);
     console.log(`· ${nombre}: actualizado`);
   } catch (error) {
     fallos.push(nombre);

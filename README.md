@@ -1,4 +1,6 @@
-# @dosxdos/ui
+# @dosxdos/shared
+
+> Se llamaba `@dosxdos/ui` hasta la 0.18.0: ya no es solo interfaz (sesion, foto, paginas legales). El repositorio era `dosxdos_ui`; GitHub redirige el nombre viejo.
 
 > # ⚠️ ¿Has tocado algo aquí?
 >
@@ -17,7 +19,7 @@
 >
 > **Si no lo haces, tu cambio existe solo en este repositorio y en tu cabeza.**
 
-Lo que comparten los módulos de Dos por Dos: la cabecera, el pie y la sesión. Funciona igual en Next y en Vite: nada de lo que exporta `@dosxdos/ui` importa Next; lo único de Next vive en `@dosxdos/ui/next`.
+Lo que comparten los módulos de Dos por Dos: la cabecera, el pie y la sesión. Funciona igual en Next y en Vite: nada de lo que exporta `@dosxdos/shared` importa Next; lo único de Next vive en `@dosxdos/shared/next`.
 
 Existe para que un cambio en el menú se haga **una sola vez**. Antes estos
 ficheros vivían copiados en cada repositorio, con la regla de acordarse de
@@ -39,14 +41,14 @@ subdominios— está `ARQUITECTURA.md`, en la raíz de cualquiera de los módulo
 | `Footer` | La firma y los enlaces legales. Con `legalBaseUrl` (la dirección del portal) enlaza a las páginas legales del portal, para las aplicaciones que no tienen las suyas. Con `center`, un contenido opcional en medio de la fila (p. ej. el crédito de una colaboración): columna central desde `xl`, línea propia al final por debajo. |
 | `AvisoLegalContent` / `PoliticaPrivacidadContent` | El texto de las páginas legales, igual en todas las aplicaciones. Cada una lo mete en su propia página. |
 | `LinkProvider` | Le da al paquete el enlace de la aplicación para sus páginas internas. Sin él, un `<a>` normal. |
-| `@dosxdos/ui/next` → `TransitionLink` | Solo Next: el enlace con el router de Next. Se le pasa a `LinkProvider`. |
+| `@dosxdos/shared/next` → `TransitionLink` | Solo Next: el enlace con el router de Next. Se le pasa a `LinkProvider`. |
 | `Icons` | Los iconos del proyecto. Cambiar de librería es tocar un fichero. |
 | `ModuleIcon` / `RemoteIcon` | El icono de un módulo, que llega como SVG desde la base de datos. |
 | `SessionProvider` / `useSession` | Quién eres. Lee el token y redirige si no hay. |
 | `ModulesProvider` / `useModules` | El catálogo de aplicaciones, pedido una sola vez. |
 | `utils/auth/*` | Leer, guardar y descodificar el token. `configureTokenStore(localStorageStore("clave") \| sessionStorageStore(...) \| cookieStore(...))` al arrancar, si la aplicación guarda su token en otro sitio. |
 
-Todo se importa de `"@dosxdos/ui"`, **nunca** de una ruta interna: así se puede
+Todo se importa de `"@dosxdos/shared"`, **nunca** de una ruta interna: así se puede
 mover un fichero aquí dentro sin romper a nadie.
 
 ---
@@ -54,16 +56,16 @@ mover un fichero aquí dentro sin romper a nadie.
 ## Instalar
 
 ```bash
-npm install github:DosxDos/dosxdos_ui#v0.4.0
+npm install github:DosxDos/dosxdos_shared#v0.4.0
 ```
 
 Se fija una **etiqueta**, no una rama. Con `#main`, cualquier `npm install` se
 traería lo último y una aplicación podría cambiar de menú sin que nadie la
 hubiera tocado.
 
-> **No lo instales con `file:../dosxdos_ui`.** npm crea un enlace simbólico y
+> **No lo instales con `file:../dosxdos_shared`.** npm crea un enlace simbólico y
 > Turbopack no resuelve paquetes a través de uno: el build falla con
-> `Module not found: Can't resolve '@dosxdos/ui'` aunque el paquete esté
+> `Module not found: Can't resolve '@dosxdos/shared'` aunque el paquete esté
 > perfectamente. Costó un rato averiguarlo. Desde GitHub se instala como una
 > carpeta de verdad y funciona.
 
@@ -79,7 +81,7 @@ por defecto:
 ```ts
 // next.config.ts
 const nextConfig: NextConfig = {
-  transpilePackages: ["@dosxdos/ui"],
+  transpilePackages: ["@dosxdos/shared"],
 };
 ```
 
@@ -96,8 +98,8 @@ se ha roto el CSS entero—:
 ```css
 @import "tailwindcss";
 
-@source "./node_modules/@dosxdos/ui/src";
-@import "@dosxdos/ui/styles.css";
+@source "./node_modules/@dosxdos/shared/src";
+@import "@dosxdos/shared/styles.css";
 
 @import "./styles/theme.css";   /* los tuyos, DESPUES */
 ```
@@ -108,7 +110,7 @@ apunta fuera del proyecto, a una carpeta que no existe —y Tailwind no dice
 nada—: escanea cero ficheros, purga todas las clases del paquete y los
 componentes salen con el HTML correcto y sin un solo estilo. Paso.
 
-`@dosxdos/ui/styles.css` trae los colores de la marca y las clases que usan sus
+`@dosxdos/shared/styles.css` trae los colores de la marca y las clases que usan sus
 componentes (`.text-body`, `.text-label`, `.keyboard-focus-ring`, `.sr-only`),
 para que el paquete se pinte aunque la aplicacion no haya definido nada.
 
@@ -147,7 +149,7 @@ Reciben lo que el paquete no puede saber:
 
 ```tsx
 // components/layout/Providers.tsx
-import { SessionProvider, ModulesProvider } from "@dosxdos/ui";
+import { SessionProvider, ModulesProvider } from "@dosxdos/shared";
 import { appConfig } from "@/config/app.config";
 import { fetchModules } from "@/services/modules-service";
 
@@ -167,7 +169,7 @@ módulo nuevo no obliga a redesplegarlo.
 
 Antes esto pedia que la aplicacion definiera ciertos tokens y clases, y si
 faltaba alguno el menu salia sin pintar sin que nada lo dijera. Ya no: van en
-`@dosxdos/ui/styles.css` con valores de respaldo. Definir los tuyos sigue
+`@dosxdos/shared/styles.css` con valores de respaldo. Definir los tuyos sigue
 siendo lo normal —y siguen ganando—, pero ahora es una opcion, no un requisito.
 
 ---
@@ -202,7 +204,7 @@ Al migrar una aplicación no hace falta tocar los cuarenta ficheros que importan
 
 ```ts
 // hooks/useSession.ts
-export { useSession } from "@dosxdos/ui";
+export { useSession } from "@dosxdos/shared";
 ```
 
 **Importarlo del sitio equivocado no da error, da un fallo silencioso.** React
@@ -223,7 +225,7 @@ El script sube la versión, etiqueta, empuja, y hace el `npm install` en todas
 las aplicaciones.
 
 **No hay ninguna lista que mantener.** Busca en las carpetas hermanas de esta y
-actualiza a quien tenga `@dosxdos/ui` en sus dependencias. Un módulo nuevo entra
+actualiza a quien tenga `@dosxdos/shared` en sus dependencias. Un módulo nuevo entra
 solo en cuanto lo instala; uno que deje de usarlo se cae solo de la lista. Una
 lista escrita a mano sería una cosa más que actualizar al crear un módulo, y
 justo la que nadie recuerda.
@@ -232,7 +234,7 @@ Requisito: que las aplicaciones estén como **carpetas hermanas** del paquete.
 
 ```
 Desktop/dosxdos/
-  dosxdos_ui/          <- aqui
+  dosxdos_shared/      <- aqui
   dosxdos_portal/
   dosxdos_logistica/
   dosxdos_tuapp/       <- entra solo
@@ -252,7 +254,7 @@ distinto.
 Se puede: basta con apuntar a la rama en vez de a una etiqueta.
 
 ```json
-"@dosxdos/ui": "github:DosxDos/dosxdos_ui#main"
+"@dosxdos/shared": "github:DosxDos/dosxdos_shared#main"
 ```
 
 **No lo hagas.** El despliegue hace `docker compose build`, que reinstala las
@@ -280,7 +282,7 @@ La etiqueta es lo que hace que cada aplicación cambie **cuando tú decides**.
 
 | Síntoma | Casi siempre es |
 |---|---|
-| `Module not found: Can't resolve '@dosxdos/ui'` | Instalado con `file:` o `npm link`: es un symlink y Turbopack no lo resuelve. Instálalo desde GitHub. |
+| `Module not found: Can't resolve '@dosxdos/shared'` | Instalado con `file:` o `npm link`: es un symlink y Turbopack no lo resuelve. Instálalo desde GitHub. |
 | El menú sale sin estilos | Falta el `@source`, o apunta mal: es `./node_modules`, relativo a `globals.css`. Tailwind no avisa, simplemente no escanea nada. |
 | `useSession necesita estar dentro de SessionProvider` | Un componente lee el contexto local y el proveedor es el del paquete (o al revés). Reexporta, no dupliques. |
 | El menú sale vacío | El portal no responde: `curl localhost:3001/api/modules`. |
@@ -288,4 +290,4 @@ La etiqueta es lo que hace que cada aplicación cambie **cuando tú decides**.
 | Cambio algo aquí y la aplicación no se entera | Sigue con la etiqueta antigua. Etiqueta y reinstala. |
 | `spawn git ENOENT` al construir en Docker | Falta `apk add git` en el Dockerfile (paso 3). |
 | `Permission denied (publickey)` al construir | El lock trae `git+ssh://` y dentro del build no hay llave. Fuerza HTTPS con los `git config` del paso 3. |
-| Los colores del paquete pisan a los míos | `theme.css` se importa ANTES que `@dosxdos/ui/styles.css`. Va después. |
+| Los colores del paquete pisan a los míos | `theme.css` se importa ANTES que `@dosxdos/shared/styles.css`. Va después. |

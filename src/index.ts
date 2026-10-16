@@ -1,7 +1,7 @@
 /**
  * Lo que el paquete ofrece a los modulos.
  *
- * Es la UNICA puerta: los modulos importan de "@dosxdos/ui" y nunca de una ruta
+ * Es la UNICA puerta: los modulos importan de "@dosxdos/shared" y nunca de una ruta
  * de dentro. Asi se puede mover un fichero aqui sin romper a nadie.
  */
 
@@ -53,7 +53,10 @@ export {
 export type { AppGroup } from "./utils/categories";
 export { LEGAL_LINKS } from "./constants/legal";
 
-// Las paginas legales: el texto, igual en todas; el marco lo pone cada aplicacion
+// Las paginas legales: el texto y el marco, iguales en todas; la cabecera la pone cada aplicacion
+export { AvisoLegalPage } from "./legal/AvisoLegalPage";
+export { PoliticaPrivacidadPage } from "./legal/PoliticaPrivacidadPage";
+export { LegalShell } from "./legal/LegalShell";
 export { AvisoLegalContent } from "./legal/AvisoLegalContent";
 export { PoliticaPrivacidadContent } from "./legal/PoliticaPrivacidadContent";
 export { LegalSection } from "./legal/LegalSection";

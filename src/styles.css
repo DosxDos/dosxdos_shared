@@ -1,11 +1,11 @@
 /* ===========================================================================
-   @dosxdos/ui — lo que los componentes necesitan para pintarse
+   @dosxdos/shared — lo que los componentes necesitan para pintarse
 
    Importalo en el globals.css de la aplicacion, DETRAS de tailwindcss y DELANTE
    de los estilos propios:
 
      @import "tailwindcss";
-     @import "@dosxdos/ui/styles.css";
+     @import "@dosxdos/shared/styles.css";
      @import "./styles/theme.css";     <- los tuyos ganan, van despues
 
    Existe para que el paquete no dependa de que la aplicacion haya definido
@@ -169,7 +169,7 @@
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-secondary, #e8edec) 60%, transparent);
   opacity: 0; transform: scale(0.85); transition: opacity 260ms ease, transform 300ms var(--dxd-ease-out);
 }
-:where(.dxd-pill):hover .dxd-avatar::after, :where(.dxd-pill)[data-open] .dxd-avatar::after { opacity: 1; transform: scale(1); }
+:where(.dxd-control):hover .dxd-avatar::after, :where(.dxd-control)[data-open] .dxd-avatar::after { opacity: 1; transform: scale(1); }
 
 /* La hamburguesa que se vuelve cruz. */
 .dxd-burger { position: relative; display: block; width: 18px; height: 14px; }

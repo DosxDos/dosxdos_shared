@@ -49,22 +49,22 @@ export function UserMenu({ perfilHref, incidenciasUrl, appId, appNombre }: {
         aria-controls="user-menu"
         aria-label={`Menú de ${displayName(user)}`}
         data-open={panel.isOpen ? "" : undefined}
-        className="dxd-control dxd-pill flex items-center rounded-full text-primary keyboard-focus-ring-inverse md:gap-2.5 md:bg-secondary md:py-1 md:pl-1 md:pr-3"
+        className="dxd-control dxd-pill flex items-center rounded-full text-secondary keyboard-focus-ring-inverse md:h-12 md:gap-3 md:bg-secondary/10 md:pr-5 md:hover:bg-secondary/15"
       >
         <span
           aria-hidden="true"
-          className="dxd-avatar flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-secondary text-body font-bold text-primary md:bg-primary md:text-secondary"
+          className="dxd-avatar flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-secondary text-body font-bold text-primary md:-ml-1 md:h-18 md:w-18 md:bg-primary md:text-heading md:text-secondary md:ring-2 md:ring-secondary/30"
         >
           {foto ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={foto} alt="" className="h-full w-full rounded-full object-cover ring-2 ring-white" />
+            <img src={foto} alt="" className="h-full w-full rounded-full object-cover" />
           ) : (
             initials(user)
           )}
         </span>
-        <span className="hidden max-w-[160px] truncate text-body font-semibold md:block">{displayName(user)}</span>
+        <span className="hidden max-w-[200px] truncate text-body font-semibold md:block">{displayName(user)}</span>
         <IconChevronDown
-          className={`mr-1 hidden h-4 w-4 shrink-0 text-primary/50 transition-transform duration-300 [transition-timing-function:cubic-bezier(0.2,0.8,0.2,1)] md:block ${panel.isOpen ? "rotate-180" : ""}`}
+          className={`hidden h-4 w-4 shrink-0 text-secondary/60 transition-transform duration-300 [transition-timing-function:cubic-bezier(0.2,0.8,0.2,1)] md:block ${panel.isOpen ? "rotate-180" : ""}`}
         />
       </button>
 

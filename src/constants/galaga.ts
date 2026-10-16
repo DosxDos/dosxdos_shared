@@ -2,7 +2,7 @@
  * El simbolo de Galaga Agency (la G), para el credito del pie.
  *
  * Trazado con potrace desde el logotipo blanco de galaga-web-3: va en linea y
- * no como imagen porque @dosxdos/ui no sirve archivos, y pedir que cada
+ * no como imagen porque @dosxdos/shared no sirve archivos, y pedir que cada
  * aplicacion copie un logotipo ajeno a su `public/` es una cosa mas que se
  * olvida. Coordenadas de potrace: se dibuja con el `transform` de abajo.
  */
