@@ -1,5 +1,6 @@
 "use client";
 
+import { useSyncExternalStore } from "react";
 import type { MouseEvent, ReactNode } from "react";
 import { useLinkComponent } from "../contexts/LinkContext";
 import { IconBack } from "../components/Icons";
@@ -11,7 +12,16 @@ import { IconBack } from "../components/Icons";
  * la cabecera llega como `header` y lo demas vive aqui, para que no se separen.
  * El enlace de vuelta usa el de la aplicacion (`LinkProvider`), asi en Next
  * navega sin recargar.
+ *
+ * Volver es volver: los enlaces legales del pie de cada aplicacion (DosxIA,
+ * Usuarios, Facturas…) traen aqui, al portal, y un «Volver al portal» mandaba
+ * a otro sitio en vez de a la pantalla de la que se venia. Si se ha llegado
+ * desde otra pagina, el boton vuelve atras en el historial, a esa misma
+ * pantalla y con su estado; solo si se abrio la pagina directamente queda el
+ * enlace al portal.
  */
+const sinSuscripcion = () => () => {};
+const vieneDeOtraPagina = () => document.referrer !== "" && window.history.length > 1;
 export function LegalShell({
   title,
   updatedAt,
@@ -26,6 +36,9 @@ export function LegalShell({
   children: ReactNode;
 }) {
   const Link = useLinkComponent();
+  // En el servidor no hay historial: se pinta el enlace al portal y, al
+  // hidratar, cambia a «Volver» si se vino de otra pagina. Sin desajuste.
+  const puedeVolver = useSyncExternalStore(sinSuscripcion, vieneDeOtraPagina, () => false);
 
   const saltarAlContenido = (event: MouseEvent<HTMLAnchorElement>) => {
     event.preventDefault();
@@ -52,13 +65,24 @@ export function LegalShell({
 
         <main id="main-content" className="flex-1 outline-none">
           <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-6 px-5 pb-16 pt-8 md:px-10 lg:px-16">
-            <Link
-              href="/"
-              className="inline-flex w-fit items-center gap-2 text-body text-primary hover:underline keyboard-focus-ring"
-            >
-              <IconBack className="h-4 w-4 shrink-0" />
-              Volver al portal
-            </Link>
+            {puedeVolver ? (
+              <button
+                type="button"
+                onClick={() => window.history.back()}
+                className="inline-flex w-fit items-center gap-2 text-body text-primary hover:underline keyboard-focus-ring"
+              >
+                <IconBack className="h-4 w-4 shrink-0" />
+                Volver
+              </button>
+            ) : (
+              <Link
+                href="/"
+                className="inline-flex w-fit items-center gap-2 text-body text-primary hover:underline keyboard-focus-ring"
+              >
+                <IconBack className="h-4 w-4 shrink-0" />
+                Volver al portal
+              </Link>
+            )}
 
             <div className="rounded-2xl border border-primary/10 bg-white/95 p-6 shadow-lg backdrop-blur-sm md:p-8">
               <h1 className="title-page text-primary">{title}</h1>
