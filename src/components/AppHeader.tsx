@@ -112,7 +112,7 @@ function AppHeaderBase({ appName, perfilHref, portalUrl, children, incidenciasUr
                 Portal
               </a>
             )}
-            <AppsMenu />
+            <AppsMenu appId={appId} appNombre={appName} />
             <UserMenu perfilHref={perfilHref} incidenciasUrl={incidenciasUrl} appId={appId} appNombre={appName} />
           </div>
         </div>
