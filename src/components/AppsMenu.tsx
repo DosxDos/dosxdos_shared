@@ -11,7 +11,7 @@ import { withSessionToken } from "../utils/auth/session";
 import { ModuleIcon } from "./ModuleIcon";
 import { MenuToggle } from "./MenuToggle";
 import { enlaceDeIncidencia } from "../utils/incidencias";
-import { IconAlert, IconClock } from "./Icons";
+import { IconAlert, IconClock, IconExternal } from "./Icons";
 
 /**
  * El menu de aplicaciones que abre el boton de la barra.
@@ -43,13 +43,18 @@ export function AppsMenu({ appId, appNombre }: {
   if (!user) return null;
 
   const visibles = visibleApps(modules, user);
-  const groups = groupByCategory(visibles);
+  // Las herramientas de fuera van aparte y al final: no son aplicaciones
+  // nuestras, se abren en otra pestaña y nunca llevan el token.
+  const externas = visibles
+    .filter((app) => app.externa === true && !app.comingSoon)
+    .sort((x, y) => x.name.localeCompare(y.name, "es"));
+  const groups = groupByCategory(visibles.filter((app) => app.externa !== true));
   // Las acciones rápidas del portal, también aquí y encima de las aplicaciones:
   // cosas que se HACEN sin ir a buscar el módulo. Cada una sale solo si quien
   // la ve tiene ese módulo.
   const reloj = visibles.find((app) => app.id === "reloj-laboral" && !app.comingSoon);
   const incidencias = visibles.find((app) => app.id === "incidencias" && !app.comingSoon);
-  const withLabels = shouldLabelGroups(groups);
+  const withLabels = shouldLabelGroups(groups) || externas.length > 0;
 
   return (
     <div ref={panel.containerRef} className="md:relative">
@@ -101,38 +106,23 @@ export function AppsMenu({ appId, appNombre }: {
 
             <div className="dxd-stagger flex min-h-0 flex-col gap-5 overflow-y-auto px-3 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-2 md:p-4">
               {(reloj || incidencias) && (
-              <section aria-labelledby="menu-acciones" className="flex flex-col gap-1.5">
+              // Botones, no filas: son cosas que se HACEN, no sitios a los que ir.
+              <section aria-labelledby="menu-acciones" className="flex flex-col gap-2.5">
                 <h3 id="menu-acciones" className="px-3 pt-1 text-label text-primary/45">Acciones rápidas</h3>
-                <ul className="grid grid-cols-1 gap-0.5 md:grid-cols-2 lg:grid-cols-3">
+                <div className="flex flex-wrap gap-2 px-3">
                   {reloj && (
-                    <li>
-                      <Link
-                        href={withSessionToken(reloj.url)}
-                        onClick={() => panel.close()}
-                        className="dxd-tile group flex h-full items-center gap-3 rounded-lg p-3 text-left keyboard-focus-ring"
-                      >
-                        <span className="dxd-tile-icon flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-primary/5 text-primary">
-                          <IconClock className="h-[1.1rem] w-[1.1rem]" />
-                        </span>
-                        <span className="truncate text-body font-medium text-primary">Fichar jornada</span>
-                      </Link>
-                    </li>
+                    <Link href={withSessionToken(reloj.url)} onClick={() => panel.close()} className="keyboard-focus-ring inline-flex min-h-11 items-center gap-2 rounded-lg bg-white px-4 text-body font-medium text-primary ring-1 ring-primary/15 transition-colors duration-150 hover:bg-primary hover:text-white">
+                      <IconClock className="h-[1.1rem] w-[1.1rem] shrink-0" />
+                      Fichar jornada
+                    </Link>
                   )}
                   {incidencias && (
-                    <li>
-                      <Link
-                        href={enlaceDeIncidencia(incidencias.url, appId, appNombre)}
-                        onClick={() => panel.close()}
-                        className="dxd-tile group flex h-full items-center gap-3 rounded-lg p-3 text-left keyboard-focus-ring"
-                      >
-                        <span className="dxd-tile-icon flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-primary/5 text-primary">
-                          <IconAlert className="h-[1.1rem] w-[1.1rem]" />
-                        </span>
-                        <span className="truncate text-body font-medium text-primary">Reportar incidencia</span>
-                      </Link>
-                    </li>
+                    <Link href={enlaceDeIncidencia(incidencias.url, appId, appNombre)} onClick={() => panel.close()} className="keyboard-focus-ring inline-flex min-h-11 items-center gap-2 rounded-lg bg-white px-4 text-body font-medium text-primary ring-1 ring-primary/15 transition-colors duration-150 hover:bg-primary hover:text-white">
+                      <IconAlert className="h-[1.1rem] w-[1.1rem] shrink-0" />
+                      Reportar incidencia
+                    </Link>
                   )}
-                </ul>
+                </div>
               </section>
               )}
 
@@ -188,6 +178,37 @@ export function AppsMenu({ appId, appNombre }: {
                   </ul>
                 </section>
               ))}
+
+              {externas.length > 0 && (
+                <section aria-labelledby="menu-externas" className="flex flex-col gap-1.5">
+                  <h3 id="menu-externas" className="px-3 pt-1 text-label text-primary/45">Herramientas externas</h3>
+                  <ul className="grid grid-cols-1 gap-0.5 md:grid-cols-2 lg:grid-cols-3">
+                    {externas.map((app) => (
+                      <li key={app.id}>
+                        <a
+                          href={app.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={() => panel.close()}
+                          aria-label={`${app.name} (se abre en una pestaña nueva)`}
+                          className="dxd-tile group flex h-full items-center gap-3 rounded-lg p-3 text-left keyboard-focus-ring"
+                        >
+                          <span className="dxd-tile-icon flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-primary/5 text-primary">
+                            <ModuleIcon app={app} className="h-[1.1rem] w-[1.1rem]" />
+                          </span>
+                          <span className="flex min-w-0 flex-1 flex-col">
+                            <span className="truncate text-body font-medium text-primary">{app.name}</span>
+                            {app.description && (
+                              <span className="truncate text-body-sm text-primary/50">{app.description}</span>
+                            )}
+                          </span>
+                          <IconExternal className="h-4 w-4 shrink-0 text-primary/40" />
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
             </div>
           </div>
         </>

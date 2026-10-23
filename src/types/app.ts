@@ -33,6 +33,11 @@ export interface PortalApp {
   /** Shown as "próximamente" and not clickable. */
   comingSoon?: boolean;
   /**
+   * Una herramienta de fuera (Notion, Zoho…): se abre en pestaña nueva y SIN
+   * nuestro token, que su JavaScript leería del `#token=` sin esfuerzo.
+   */
+  externa?: boolean;
+  /**
    * El orden en que sale dentro de su seccion. Menor, mas arriba.
    *
    * Viaja al cliente para que editar un modulo pueda conservarlo. Cuando no lo
