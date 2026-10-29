@@ -37,6 +37,7 @@ subdominios— está `ARQUITECTURA.md`, en la raíz de cualquiera de los módulo
 |---|---|
 | `AppHeader` | La barra superior entera: logotipo, nombre de la aplicación, fecha, menú y cuenta. `appName`, `perfilHref` y, fuera del portal, `portalUrl`. |
 | `AppsMenu` | El menú de aplicaciones. Se pinta con lo que sirve `/api/modules`. |
+| `CampanaDeAvisos` / `useAvisos` | La campana de la cabecera: los avisos de todas las aplicaciones, del portal (`/api/avisos`), con su historial. `AppHeader` ya la pinta con su `portalUrl`; en el portal se omite y pide a su mismo origen. `ABRIR_AVISOS` la abre desde otro sitio. |
 | `UserMenu` | La cuenta: nombre, perfil y cerrar sesión. |
 | `Footer` | La firma y los enlaces legales. Con `legalBaseUrl` (la dirección del portal) enlaza a las páginas legales del portal, para las aplicaciones que no tienen las suyas. Con `center`, un contenido opcional en medio de la fila (p. ej. el crédito de una colaboración): columna central desde `xl`, línea propia al final por debajo. |
 | `AvisoLegalContent` / `PoliticaPrivacidadContent` | El texto de las páginas legales, igual en todas las aplicaciones. Cada una lo mete en su propia página. |

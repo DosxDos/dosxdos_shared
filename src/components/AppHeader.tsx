@@ -4,6 +4,7 @@ import { memo, type ReactNode } from "react";
 
 import { AppsMenu } from "./AppsMenu";
 import { UserMenu } from "./UserMenu";
+import { CampanaDeAvisos } from "./CampanaDeAvisos";
 import { IconBack } from "./Icons";
 import { useSession } from "../hooks/useSession";
 import { withSessionToken } from "../utils/auth/session";
@@ -39,8 +40,8 @@ interface Props {
  *
  * Fondo berenjena, borde inferior en hielo, fija arriba: quien pasa de una
  * aplicacion a otra tiene que reconocer la misma casa. A la izquierda el
- * logotipo, el nombre de la aplicacion y la fecha; a la derecha el menu de
- * aplicaciones y la cuenta.
+ * logotipo, el nombre de la aplicacion y la fecha; a la derecha la campana de
+ * avisos, el menu de aplicaciones y la cuenta.
  *
  * Antes cada aplicacion tenia su copia y ya se habian separado: el portal con
  * borde y logistica sin el, etiquetas distintas para el lector de pantalla.
@@ -112,6 +113,9 @@ function AppHeaderBase({ appName, perfilHref, portalUrl, children, incidenciasUr
                 Portal
               </a>
             )}
+            {/* La campana, en TODAS las aplicaciones: los avisos de todas, del
+                portal. Ninguna la tiene que pasar. */}
+            <CampanaDeAvisos portalUrl={portalUrl} />
             <AppsMenu appId={appId} appNombre={appName} />
             <UserMenu perfilHref={perfilHref} incidenciasUrl={incidenciasUrl} appId={appId} appNombre={appName} />
           </div>

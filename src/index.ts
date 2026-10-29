@@ -10,6 +10,7 @@ export { AppHeader } from "./components/AppHeader";
 export { AppsMenu } from "./components/AppsMenu";
 export { UserMenu } from "./components/UserMenu";
 export { Footer } from "./components/Footer";
+export { CampanaDeAvisos } from "./components/CampanaDeAvisos";
 
 // Piezas sueltas que los modulos tambien usan
 export { ModuleIcon } from "./components/ModuleIcon";
@@ -22,6 +23,8 @@ export { ModulesProvider } from "./contexts/ModulesContext";
 export { useSession } from "./hooks/useSession";
 export { useFotoDePerfil, avisarFotoCambiada, FOTO_CAMBIADA } from "./hooks/useFotoDePerfil";
 export { useModules } from "./hooks/useModules";
+export { useAvisos, ABRIR_AVISOS } from "./hooks/useAvisos";
+export type { EstadoDeAvisos } from "./hooks/useAvisos";
 export { LinkProvider, useLinkComponent } from "./contexts/LinkContext";
 export type { LinkComponent } from "./contexts/LinkContext";
 
@@ -71,3 +74,4 @@ export {
 // Tipos
 export type { PortalApp } from "./types/app";
 export type { AuthenticatedUser, JwtPayload } from "./types/auth";
+export type { AvisoDelHistorial, PaginaDeAvisos } from "./types/aviso";

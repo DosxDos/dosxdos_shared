@@ -32,6 +32,8 @@
   --color-ink: #281528;
   --color-activo: #10b981;
   --color-hielo: #d1d5db;
+  /* El rojo de las incidencias en la campana. La aplicacion puede tener el suyo. */
+  --color-accent: #c0392b;
 }
 
 /* --- Texto ----------------------------------------------------------------
@@ -226,8 +228,21 @@
 .dxd-row { transition: background-color 180ms ease, transform 220ms var(--dxd-ease); }
 .dxd-row:hover { background-color: color-mix(in srgb, var(--color-primary, #281528) 6%, transparent); transform: translateX(2px); }
 
+/* El cajon de la campana: hoja desde abajo en movil, panel desde la derecha
+   en escritorio. Su propio z-index, por encima de la cabecera de CUALQUIER
+   aplicacion (la del portal va a 50, la del reloj a 110) y del menu. */
+.dxd-cajon-fondo { z-index: 900; }
+.dxd-cajon { z-index: 910; animation: dxd-sheet-in 360ms var(--dxd-ease) both; }
+.dxd-cajon[data-closing] { animation: dxd-sheet-out 220ms var(--dxd-ease) both; pointer-events: none; }
+@media (min-width: 1024px) {
+  .dxd-cajon { animation-name: dxd-cajon-in; }
+  .dxd-cajon[data-closing] { animation-name: dxd-cajon-out; }
+}
+@keyframes dxd-cajon-in { from { transform: translateX(100%); } to { transform: none; } }
+@keyframes dxd-cajon-out { from { transform: none; } to { transform: translateX(100%); } }
+
 @media (prefers-reduced-motion: reduce) {
-  .dxd-header, .dxd-pop, .dxd-sheet, .dxd-scrim, .dxd-stagger > * { animation: none !important; }
+  .dxd-header, .dxd-pop, .dxd-sheet, .dxd-cajon, .dxd-scrim, .dxd-stagger > * { animation: none !important; }
   .dxd-control, .dxd-tile, .dxd-tile-icon, .dxd-row, .dxd-avatar, .dxd-avatar::after, .dxd-burger > span, .dxd-logo, .dxd-back { transition: none !important; }
   .dxd-control:hover, .dxd-tile:hover, .dxd-row:hover, .dxd-logo:hover { transform: none; }
 }
