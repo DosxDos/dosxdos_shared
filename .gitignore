@@ -1,3 +1,6 @@
 node_modules/
 *.tsbuildinfo
 .DS_Store
+
+# Claude Code's local setup (rules, hooks, skills): stays on disk, out of the repo.
+/.claude/
