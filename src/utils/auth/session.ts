@@ -243,6 +243,56 @@ export async function renewSession(authUrl: string): Promise<RenewResult> {
   return renovar();
 }
 
+const MARCA_SIN_REFRESH = "dxd_sin_refresh";
+
+/**
+ * Pide una sesion con refresh para quien ya tiene un token de acceso valido
+ * pero no refresh: llego por un enlace de otra aplicacion (el portal pasa solo
+ * su token), con una sesion recordada de antes, o entro con Google/Microsoft
+ * (04/11/2026). El modulo de acceso solo la concede a las aplicaciones de su
+ * lista; si contesta 403 se apunta en sessionStorage para no volver a pedirla
+ * en esta pestaña. Devuelve el usuario con el token nuevo, o null si no hubo.
+ */
+export async function adoptSession(authUrl: string): Promise<AuthenticatedUser | null> {
+  const token = readToken();
+  if (!token || readRefresh()) return null;
+  try {
+    if (window.sessionStorage.getItem(MARCA_SIN_REFRESH)) return null;
+  } catch {
+    // sin sessionStorage se pide igual
+  }
+  let r: Response;
+  try {
+    r = await fetch(`${authUrl.replace(/\/+$/, "")}/api/auth/sesion-desde-token`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: "{}",
+      credentials: "omit",
+    });
+  } catch {
+    return null;
+  }
+  if (r.status === 403) {
+    try {
+      window.sessionStorage.setItem(MARCA_SIN_REFRESH, "1");
+    } catch {
+      // nada
+    }
+    return null;
+  }
+  if (!r.ok) return null;
+  let d: { token?: unknown; refresh?: unknown } | null = null;
+  try {
+    d = (await r.json()) as { token?: unknown; refresh?: unknown };
+  } catch {
+    return null;
+  }
+  if (!d || typeof d.token !== "string" || typeof d.refresh !== "string") return null;
+  storeToken(d.token);
+  storeRefresh(d.refresh);
+  return toAuthenticatedUser(d.token);
+}
+
 /**
  * Mantiene la sesion viva mientras la pestaña esta abierta: renueva un minuto
  * antes de que caduque el token y al volver a la pestaña si queda poco. Si no
@@ -300,21 +350,25 @@ export function keepSessionAlive(
 
 /**
  * Cierra la sesion en auth-service (revoca la familia: la del modulo de acceso y
- * la de todas las aplicaciones de esa entrada) y borra lo guardado. No espera:
- * `keepalive` deja que la peticion termine aunque la pagina cambie.
+ * la de todas las aplicaciones de esa entrada) y borra lo guardado. Espera a
+ * que auth-service conteste, con un tope de segundo y medio: si no llega, se
+ * sale igual y el refresh caduca solo. `keepalive` por si la pagina cambia
+ * antes de tiempo.
  */
-export function signOutEverywhere(authUrl: string): void {
+export async function signOutEverywhere(authUrl: string): Promise<void> {
   const refresh = readRefresh();
   clearToken();
   if (!refresh || typeof fetch === "undefined") return;
+  const tope = new Promise<void>((resolve) => setTimeout(resolve, 1_500));
   try {
-    void fetch(`${authUrl.replace(/\/+$/, "")}/api/auth/logout`, {
+    const peticion = fetch(`${authUrl.replace(/\/+$/, "")}/api/auth/logout`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ refresh }),
       credentials: "omit",
       keepalive: true,
-    }).catch(() => {});
+    }).then(() => undefined, () => undefined);
+    await Promise.race([peticion, tope]);
   } catch {
     // Se sale igual: el refresh caduca solo.
   }

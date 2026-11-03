@@ -193,6 +193,10 @@ fragmento: `#token=…&refresh=…`. Con la version 0.22 el paquete:
   permisos o la contraseña), borra todo y manda al acceso con `returnUrl`;
 - `signOut` cierra tambien en el servidor (`/api/auth/logout`): la sesion de
   todas las aplicaciones de esa entrada.
+- (0.23) si hay token pero no refresh —se llego por un enlace de otra
+  aplicacion, con una sesion recordada de antes o con Google/Microsoft— pide
+  una sesion con refresh (`/api/auth/sesion-desde-token`); si el modulo de
+  acceso no se la da a esta aplicacion (403), sigue con el token de siempre.
 
 Sin refresh (el modulo de acceso aun no se lo da a esta aplicacion), todo sigue
 como antes. Para que se lo de, la aplicacion tiene que estar en

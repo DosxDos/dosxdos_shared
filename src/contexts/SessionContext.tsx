@@ -4,6 +4,7 @@ import { createContext, useCallback, useEffect, useMemo, useState } from "react"
 import type { ReactNode } from "react";
 import type { AuthenticatedUser } from "../types/auth";
 import {
+  adoptSession,
   consumeTokenFromUrl,
   currentUser,
   keepSessionAlive,
@@ -67,6 +68,14 @@ export function SessionProvider({
         if (cancelado) return;
         if (r.ok) resolved = r.user;
       }
+      // Con token pero sin refresh (vino de otra aplicacion, o de una sesion
+      // recordada de antes): se pide una sesion con refresh. Si el modulo de
+      // acceso no la da a esta aplicacion, se sigue con el token de siempre.
+      if (resolved && !readRefresh()) {
+        const adoptado = await adoptSession(authUrl);
+        if (cancelado) return;
+        if (adoptado) resolved = adoptado;
+      }
 
       // La sesion vive en la URL y en localStorage, que solo existen despues de
       // montar. Resolverla durante el render devuelve "sin sesion" en el servidor
@@ -102,9 +111,12 @@ export function SessionProvider({
   const isResolving = session === null;
 
   const signOut = useCallback(() => {
-    signOutEverywhere(authUrl);
     setSession({ user: null });
-    window.location.replace(`${authUrl}/salir`);
+    // Primero se avisa a auth-service (revoca la familia) y luego se va a
+    // /salir, que borra la sesion recordada del modulo de acceso.
+    void signOutEverywhere(authUrl).finally(() => {
+      window.location.replace(`${authUrl}/salir`);
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

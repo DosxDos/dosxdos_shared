@@ -44,6 +44,7 @@ export {
   readRefresh,
   storeRefresh,
   renewSession,
+  adoptSession,
   keepSessionAlive,
   signOutEverywhere,
   msUntilExpiry,
