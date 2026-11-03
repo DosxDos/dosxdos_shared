@@ -175,6 +175,34 @@ siendo lo normal —y siguen ganando—, pero ahora es una opcion, no un requisi
 
 ---
 
+## La sesion se renueva sola (03/11/2026)
+
+Desde el plan de sesiones revocables (`auth-service/docs/sesiones-revocables.md`)
+el modulo de acceso puede entregar, ademas del token, un **refresh token** en el
+fragmento: `#token=…&refresh=…`. Con la version 0.22 el paquete:
+
+- lo lee en `consumeTokenFromUrl()` y lo guarda aparte (`dxd_refresh` en
+  localStorage; se puede cambiar con el segundo parametro de
+  `configureTokenStore`);
+- en `SessionProvider`, renueva el token de acceso un minuto antes de que
+  caduque y al volver a la pestaña (`keepSessionAlive`), pidiendoselo al modulo
+  de acceso (`<authUrl>/api/auth/refresh`); el token nuevo lleva los permisos de
+  ahora y se guarda en el mismo sitio, asi que las llamadas a la API lo cogen
+  solas;
+- si auth-service dice que la sesion ya no vale (la cerraron, cambiaron los
+  permisos o la contraseña), borra todo y manda al acceso con `returnUrl`;
+- `signOut` cierra tambien en el servidor (`/api/auth/logout`): la sesion de
+  todas las aplicaciones de esa entrada.
+
+Sin refresh (el modulo de acceso aun no se lo da a esta aplicacion), todo sigue
+como antes. Para que se lo de, la aplicacion tiene que estar en
+`ORIGENES_CON_REFRESH` del modulo de acceso (`dosxdos_auth/constants/apps.ts`),
+y solo cuando ya lleve esta version: el lector anterior tomaba todo lo que
+seguia a `#token=` como token.
+
+Varias pestañas comparten el refresh: se renueva bajo `navigator.locks` y
+auth-service admite un refresh recien gastado durante 30 segundos.
+
 ## El menú de usuario y la URL del perfil
 
 Es la única diferencia de verdad entre el portal y los demás módulos, y por eso

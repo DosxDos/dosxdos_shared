@@ -40,8 +40,15 @@ export {
   localStorageStore,
   sessionStorageStore,
   cookieStore,
+  // Sesiones revocables (03/11/2026): el refresh y la renovacion
+  readRefresh,
+  storeRefresh,
+  renewSession,
+  keepSessionAlive,
+  signOutEverywhere,
+  msUntilExpiry,
 } from "./utils/auth/session";
-export type { TokenStore } from "./utils/auth/session";
+export type { TokenStore, RenewResult } from "./utils/auth/session";
 export { decodeToken, toAuthenticatedUser, isExpired } from "./utils/auth/jwt";
 
 // Ayudas de presentacion

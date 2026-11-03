@@ -4,28 +4,33 @@ import { createContext, useCallback, useEffect, useMemo, useState } from "react"
 import type { ReactNode } from "react";
 import type { AuthenticatedUser } from "../types/auth";
 import {
-  clearToken,
   consumeTokenFromUrl,
   currentUser,
+  keepSessionAlive,
+  readRefresh,
+  renewSession,
+  signOutEverywhere,
 } from "../utils/auth/session";
 
 interface SessionValue {
   user: AuthenticatedUser | null;
-  /** Mientras se comprueba: ni hay sesion ni se sabe que no la hay. */
   isResolving: boolean;
   signOut: () => void;
-  /** La direccion del modulo de acceso. La usa la cabecera para pedir la foto. */
   authUrl: string;
 }
 
 export const SessionContext = createContext<SessionValue | null>(null);
 
 /**
- * Resuelve quien esta usando el portal.
+ * La sesion de la aplicacion: quien esta dentro, o nadie (y entonces al modulo
+ * de acceso).
  *
- * El token llega en el fragmento de la URL tras iniciar sesion, o ya esta
- * guardado de antes. Si no hay ninguno utilizable, se manda a la persona al
- * modulo de acceso con `returnUrl` para que vuelva aqui al terminar.
+ * Desde el 03/11/2026 (sesiones revocables) tambien la mantiene viva: si el
+ * modulo de acceso le dio un refresh, renueva el token de acceso antes de que
+ * caduque y al volver a la pestaña, y si auth-service dice que la sesion ya no
+ * vale (la cerraron, cambiaron los permisos o la contraseña), manda al acceso
+ * con `returnUrl` para volver aqui tras entrar. Sin refresh, todo sigue como
+ * antes: el token vale hasta que caduca.
  */
 export function SessionProvider({
   children,
@@ -33,62 +38,74 @@ export function SessionProvider({
   authUrl,
 }: {
   children: ReactNode;
-  /** La base publica de ESTA aplicacion. Es a donde se vuelve tras entrar. */
   siteUrl: string;
-  /** El modulo de acceso compartido. */
   authUrl: string;
 }) {
-  /**
-   * `null` = todavia no se sabe. Ese es el estado con el que se pinta en el
-   * servidor y con el que arranca el cliente, y por eso los dos coinciden.
-   *
-   * No se resuelve en el inicializador de useState: el servidor no tiene ni URL
-   * ni localStorage, asi que devolveria "sin sesion" mientras el cliente
-   * devuelve el usuario, y React se queja de que el HTML no cuadra.
-   */
   const [session, setSession] = useState<{ user: AuthenticatedUser | null } | null>(null);
 
+  const alAcceso = useCallback(() => {
+    // `replace` y no `assign` para que el boton de atras no devuelva a una
+    // pantalla vacia en bucle.
+    const returnUrl = encodeURIComponent(siteUrl);
+    window.location.replace(`${authUrl}/?returnUrl=${returnUrl}`);
+  }, [authUrl, siteUrl]);
+
   useEffect(() => {
-    // Primero el fragmento: si acaba de volver de iniciar sesion, ese token es
-    // mas nuevo que el que pudiera haber guardado.
-    consumeTokenFromUrl();
+    let cancelado = false;
+    let parar: (() => void) | undefined;
 
-    const resolved = currentUser();
+    const resolver = async () => {
+      // Primero el fragmento: si acaba de volver de iniciar sesion, ese token es
+      // mas nuevo que el que pudiera haber guardado.
+      consumeTokenFromUrl();
 
-    // La sesion vive en la URL y en localStorage, que solo existen despues de
-    // montar. Resolverla durante el render devuelve "sin sesion" en el servidor
-    // y "con sesion" en el cliente: justo el desajuste de hidratacion que este
-    // codigo evita. El render de mas es el precio, y es uno solo.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setSession({ user: resolved });
+      let resolved = currentUser();
+      // Token caducado pero con refresh: se pide uno nuevo antes de rendirse.
+      // Si auth-service no contesta, al acceso: alli se intentara igual.
+      if (!resolved && readRefresh()) {
+        const r = await renewSession(authUrl);
+        if (cancelado) return;
+        if (r.ok) resolved = r.user;
+      }
 
-    if (!resolved) {
-      // Sin sesion: al modulo de acceso. `replace` y no `assign` para que el
-      // boton de atras no devuelva a una pantalla vacia en bucle.
-      const returnUrl = encodeURIComponent(siteUrl);
-      window.location.replace(`${authUrl}/?returnUrl=${returnUrl}`);
-    }
+      // La sesion vive en la URL y en localStorage, que solo existen despues de
+      // montar. Resolverla durante el render devuelve "sin sesion" en el servidor
+      // y "con sesion" en el cliente: justo el desajuste de hidratacion que este
+      // codigo evita. El render de mas es el precio, y es uno solo.
+      setSession({ user: resolved });
+
+      if (!resolved) {
+        alAcceso();
+        return;
+      }
+
+      parar = keepSessionAlive(authUrl, (user) => {
+        if (cancelado) return;
+        if (user) {
+          setSession({ user });
+        } else {
+          setSession({ user: null });
+          alAcceso();
+        }
+      });
+    };
+
+    void resolver();
+    return () => {
+      cancelado = true;
+      parar?.();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const user = session?.user ?? null;
   const isResolving = session === null;
 
-  /**
-   * Cierra la sesion aqui y en el modulo de acceso.
-   *
-   * Desde el 17/09/2026 el modulo de acceso recuerda la sesion en su propio
-   * origen, para no pedir la contrasena cada vez que se salta de una aplicacion
-   * a otra. Eso tiene una consecuencia que hay que atender aqui: borrar solo el
-   * token de esta aplicacion ya no cierra nada. Al volver, el modulo reconoce su
-   * sesion y deja entrar otra vez, y el boton de cerrar sesion parece roto.
-   *
-   * Por eso se manda a `/salir` y no a la raiz: esa ruta borra la suya y enseña
-   * el formulario. La raiz haria justo lo contrario —reconocer y redirigir—.
-   */
   const signOut = useCallback(() => {
-    clearToken();
+    signOutEverywhere(authUrl);
     setSession({ user: null });
     window.location.replace(`${authUrl}/salir`);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const value = useMemo(
