@@ -1,7 +1,7 @@
 "use client";
 
 import type { AuthenticatedUser } from "../../types/auth";
-import { toAuthenticatedUser, decodeToken, isExpired } from "./jwt";
+import { toAuthenticatedUser, decodeToken } from "./jwt";
 
 /**
  * Donde vive la sesion de una aplicacion: el token de acceso y, desde el
@@ -83,6 +83,46 @@ export function cookieStore(name: string, days = 1): TokenStore {
 
 let store: TokenStore = localStorageStore("dxd_token");
 let refreshStore: TokenStore = localStorageStore("dxd_refresh");
+/**
+ * Cuando caduca el token segun el reloj de ESTE navegador (0.24, 05/11/2026).
+ *
+ * El `exp` del token lo pone el servidor con su reloj; si el del PC va
+ * adelantado unos minutos (pasa, y no siempre se puede arreglar), un token de
+ * cinco minutos parece caducado nada mas llegar y la aplicacion rebota al
+ * acceso en bucle. Por eso la caducidad se calcula aqui, al guardar el token,
+ * a partir de lo que el servidor dice que le queda (`expiraEn`, segundos) o,
+ * si no lo dice, de `exp - iat`: ambos son duraciones, que valen en cualquier
+ * reloj. Se guarda junto a un trozo del token para no aplicarla a otro.
+ */
+const expiryStore: TokenStore = localStorageStore("dxd_expira");
+
+function huella(token: string): string {
+  return token.slice(-24);
+}
+
+/** Apunta cuando caduca el token recien guardado. `segundos`: lo que le queda, segun el servidor. */
+function recordarCaducidad(token: string, segundos?: number | null): void {
+  let vida = typeof segundos === "number" && segundos > 0 ? segundos : null;
+  if (vida === null) {
+    const payload = decodeToken(token);
+    if (payload && typeof payload.iat === "number" && payload.exp > payload.iat) vida = payload.exp - payload.iat;
+  }
+  if (vida === null) {
+    expiryStore.clear();
+    return;
+  }
+  expiryStore.write(`${huella(token)}|${Date.now() + vida * 1000}`);
+}
+
+/** La caducidad apuntada para el token guardado, en ms de este reloj; null si no hay o es de otro token. */
+function caducidadLocal(token: string): number | null {
+  const apunte = expiryStore.read();
+  if (!apunte) return null;
+  const sep = apunte.lastIndexOf("|");
+  if (sep < 0 || apunte.slice(0, sep) !== huella(token)) return null;
+  const ms = Number(apunte.slice(sep + 1));
+  return Number.isFinite(ms) ? ms : null;
+}
 
 /**
  * Donde guarda esta aplicacion su token. Cada aplicacion decide —su clave de
@@ -123,18 +163,26 @@ export function consumeTokenFromUrl(): string | null {
   return token;
 }
 
-export function storeToken(token: string): void {
+/**
+ * Guarda un token recien emitido. `expiraEn`: los segundos que le quedan segun
+ * el servidor (lo devuelven el login, el refresh y sesion-desde-token); sin el,
+ * se toma `exp - iat`. Con eso la caducidad se mide con este reloj y no con el
+ * del servidor (ver `expiryStore`).
+ */
+export function storeToken(token: string, expiraEn?: number | null): void {
   store.write(token);
+  recordarCaducidad(token, expiraEn);
 }
 
 export function readToken(): string | null {
   return store.read();
 }
 
-/** Borra la sesion entera: el token y el refresh. */
+/** Borra la sesion entera: el token, el refresh y la caducidad apuntada. */
 export function clearToken(): void {
   store.clear();
   refreshStore.clear();
+  expiryStore.clear();
 }
 
 export function storeRefresh(refresh: string): void {
@@ -154,7 +202,7 @@ export function currentUser(): AuthenticatedUser | null {
   if (!token) return null;
 
   const payload = decodeToken(token);
-  if (!payload || isExpired(payload)) {
+  if (!payload || msUntilExpiry() <= 0) {
     if (!readRefresh()) clearToken();
     return null;
   }
@@ -162,12 +210,23 @@ export function currentUser(): AuthenticatedUser | null {
   return toAuthenticatedUser(token);
 }
 
-/** Cuantos milisegundos le quedan al token guardado; 0 si no hay o ya caduco. */
+/**
+ * Cuantos milisegundos le quedan al token guardado; 0 si no hay o ya caduco.
+ * Con la caducidad apuntada al guardarlo (este reloj); si no la hay, con el
+ * `exp` del token (el reloj del servidor).
+ */
 export function msUntilExpiry(): number {
   const token = readToken();
   const payload = token ? decodeToken(token) : null;
-  if (!payload) return 0;
-  return Math.max(0, payload.exp * 1000 - Date.now());
+  if (!token || !payload) return 0;
+  const local = caducidadLocal(token);
+  const limite = local ?? payload.exp * 1000;
+  return Math.max(0, limite - Date.now());
+}
+
+/** Si la sesion guardada ya ha caducado (o no hay). Para quien tenga su propio `haCaducado`. */
+export function isSessionExpired(): boolean {
+  return msUntilExpiry() <= 0;
 }
 
 export type RenewResult =
@@ -221,16 +280,16 @@ export async function renewSession(authUrl: string): Promise<RenewResult> {
       return { ok: false, reason: "caducada" };
     }
     if (!r.ok) return { ok: false, reason: "no-disponible" };
-    let d: { token?: unknown; refresh?: unknown } | null = null;
+    let d: { token?: unknown; refresh?: unknown; expiraEn?: unknown } | null = null;
     try {
-      d = (await r.json()) as { token?: unknown; refresh?: unknown };
+      d = (await r.json()) as { token?: unknown; refresh?: unknown; expiraEn?: unknown };
     } catch {
       d = null;
     }
     if (!d || typeof d.token !== "string" || typeof d.refresh !== "string") {
       return { ok: false, reason: "no-disponible" };
     }
-    storeToken(d.token);
+    storeToken(d.token, typeof d.expiraEn === "number" ? d.expiraEn : null);
     storeRefresh(d.refresh);
     const user = toAuthenticatedUser(d.token);
     return user ? { ok: true, user } : { ok: false, reason: "no-disponible" };
@@ -281,14 +340,14 @@ export async function adoptSession(authUrl: string): Promise<AuthenticatedUser |
     return null;
   }
   if (!r.ok) return null;
-  let d: { token?: unknown; refresh?: unknown } | null = null;
+  let d: { token?: unknown; refresh?: unknown; expiraEn?: unknown } | null = null;
   try {
-    d = (await r.json()) as { token?: unknown; refresh?: unknown };
+    d = (await r.json()) as { token?: unknown; refresh?: unknown; expiraEn?: unknown };
   } catch {
     return null;
   }
   if (!d || typeof d.token !== "string" || typeof d.refresh !== "string") return null;
-  storeToken(d.token);
+  storeToken(d.token, typeof d.expiraEn === "number" ? d.expiraEn : null);
   storeRefresh(d.refresh);
   return toAuthenticatedUser(d.token);
 }

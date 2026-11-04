@@ -48,6 +48,8 @@ export {
   keepSessionAlive,
   signOutEverywhere,
   msUntilExpiry,
+  // 0.24 (05/11/2026): la caducidad medida con el reloj del navegador
+  isSessionExpired,
 } from "./utils/auth/session";
 export type { TokenStore, RenewResult } from "./utils/auth/session";
 export { decodeToken, toAuthenticatedUser, isExpired } from "./utils/auth/jwt";

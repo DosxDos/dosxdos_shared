@@ -207,6 +207,22 @@ seguia a `#token=` como token.
 Varias pestañas comparten el refresh: se renueva bajo `navigator.locks` y
 auth-service admite un refresh recien gastado durante 30 segundos.
 
+### La caducidad se mide con el reloj del navegador (0.24, 05/11/2026)
+
+El `exp` del token lo pone el servidor con su reloj. Si el del PC va adelantado
+unos minutos (pasa, y no siempre se puede arreglar), un token de cinco minutos
+parece caducado nada mas llegar y la aplicacion rebota al acceso en bucle. Por
+eso, al guardar un token, el paquete apunta cuando caduca **segun este reloj**
+(`dxd_expira`): con lo que el servidor dice que le queda (`expiraEn`, en
+segundos, que devuelven el login, `/api/auth/refresh` y `sesion-desde-token`)
+o, si no lo dice, con `exp - iat`, que es una duracion y vale en cualquier
+reloj. `currentUser`, `msUntilExpiry`, `keepSessionAlive` y la nueva
+`isSessionExpired()` usan ese apunte; sin el, caen al `exp` de siempre.
+
+Una aplicacion con su propio `haCaducado(token)` debe preguntar al paquete
+(`isSessionExpired()`) cuando el token sea el guardado, o tendra el mismo
+bucle con el reloj adelantado.
+
 ## El menú de usuario y la URL del perfil
 
 Es la única diferencia de verdad entre el portal y los demás módulos, y por eso
