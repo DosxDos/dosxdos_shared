@@ -7,7 +7,7 @@ import { UserMenu } from "./UserMenu";
 import { CampanaDeAvisos } from "./CampanaDeAvisos";
 import { IconBack } from "./Icons";
 import { useSession } from "../hooks/useSession";
-import { withSessionToken } from "../utils/auth/session";
+import { relinkWithSession, withSessionToken } from "../utils/auth/session";
 import { todayLabel } from "../utils/fecha";
 
 interface Props {
@@ -71,6 +71,9 @@ function AppHeaderBase({ appName, perfilHref, portalUrl, children, incidenciasUr
   // Con el token: la sesion se guarda por origen, y sin el el portal no
   // tendria ninguna y mandaria al modulo de acceso a pedir la contraseña.
   const portal = portalUrl ? withSessionToken(portalUrl) : null;
+  // Las aplicaciones calculan perfilHref con withSessionToken ANTES de montar el
+  // SessionProvider; aqui dentro ya se sabe el acceso y se rehace (0.25).
+  const perfil = relinkWithSession(perfilHref);
 
   return (
     <header className="dxd-header sticky top-0 z-drawer bg-primary" aria-label={`Cabecera de ${appName}`}>
@@ -117,7 +120,7 @@ function AppHeaderBase({ appName, perfilHref, portalUrl, children, incidenciasUr
                 portal. Ninguna la tiene que pasar. */}
             <CampanaDeAvisos portalUrl={portalUrl} />
             <AppsMenu appId={appId} appNombre={appName} />
-            <UserMenu perfilHref={perfilHref} incidenciasUrl={incidenciasUrl} appId={appId} appNombre={appName} />
+            <UserMenu perfilHref={perfil} incidenciasUrl={incidenciasUrl} appId={appId} appNombre={appName} />
           </div>
         </div>
         {children}

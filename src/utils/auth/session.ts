@@ -155,11 +155,26 @@ export function consumeTokenFromUrl(): string | null {
   const params = new URLSearchParams(hash.slice(1));
   const token = params.get("token");
   if (!token) return null;
-  storeToken(token);
   const refresh = params.get("refresh");
+  window.history.replaceState(null, "", window.location.pathname + window.location.search);
+
+  // Un enlace de otra aplicacion (token solo, sin refresh) no pisa una sesion
+  // propia vigente de la misma persona (0.25, 05/11/2026): el token que viene
+  // puede ser el corto de una aplicacion con refresh (cinco minutos), y
+  // quedarse con el seria perder la sesion larga de aqui y su refresh. Lo que
+  // viene del modulo de acceso trae refresh y siempre manda.
+  if (!refresh) {
+    const propio = readToken();
+    if (propio && msUntilExpiry() > 0) {
+      const mio = decodeToken(propio);
+      const suyo = decodeToken(token);
+      if (mio && suyo && mio.sub === suyo.sub) return propio;
+    }
+  }
+
+  storeToken(token);
   if (refresh) storeRefresh(refresh);
   else refreshStore.clear();
-  window.history.replaceState(null, "", window.location.pathname + window.location.search);
   return token;
 }
 
@@ -433,10 +448,30 @@ export async function signOutEverywhere(authUrl: string): Promise<void> {
   }
 }
 
+let authUrlConocida: string | null = null;
+
 /**
- * Un enlace a otra aplicacion con la sesion en el fragmento, para que no
- * vuelva a pedir la contraseña. Solo el token: el refresh es de esta
- * aplicacion; la otra pedira el suyo al modulo de acceso.
+ * El modulo de acceso de esta aplicacion. Lo registra `SessionProvider` al
+ * montarse; una aplicacion sin el lo llama a mano. Hace falta para que los
+ * enlaces a otras aplicaciones pasen por el acceso cuando la sesion de aqui es
+ * corta (ver {@link withSessionToken}).
+ */
+export function configureAuthUrl(url: string): void {
+  authUrlConocida = url ? url.replace(/\/+$/, "") : null;
+}
+
+/**
+ * Un enlace a otra aplicacion que no vuelva a pedir la contraseña.
+ *
+ * Con una sesion renovable (hay refresh; el token de aqui es corto, de minutos)
+ * el enlace pasa por el modulo de acceso: `<authUrl>/?returnUrl=<destino>`.
+ * El acceso tiene la sesion recordada, la renueva y entrega al destino SU
+ * token (largo, o con refresh si esta en su lista) sin pedir nada. Pasarle el
+ * token corto de aqui era darle una sesion de cinco minutos y, al caducar,
+ * mandarle al acceso de verdad (facturas → portal, 04/11/2026).
+ *
+ * Sin refresh, como siempre: el token de aqui en el fragmento. Solo el token:
+ * el refresh es de esta aplicacion; la otra pedira el suyo al modulo de acceso.
  */
 export function withSessionToken(url: string): string {
   // Una ruta del propio portal no necesita token: la sesion ya esta aqui.
@@ -448,10 +483,30 @@ export function withSessionToken(url: string): string {
 
   try {
     const target = new URL(url);
+    const propio = typeof window !== "undefined" && target.origin === window.location.origin;
+    if (!propio && authUrlConocida && readRefresh()) {
+      return `${authUrlConocida}/?returnUrl=${encodeURIComponent(target.toString())}`;
+    }
     target.hash = `token=${encodeURIComponent(token)}`;
     return target.toString();
   } catch {
     // URL mal formada: mejor mandar a la persona sin sesion que no mandarla.
+    return url;
+  }
+}
+
+/**
+ * Vuelve a hacer un enlace que ya llevaba `#token=…` (una aplicacion lo
+ * calculo antes de montar el proveedor de sesion, cuando aun no se sabia el
+ * modulo de acceso): se le quita el token y se rehace con la regla de ahora.
+ */
+export function relinkWithSession(url: string): string {
+  try {
+    const target = new URL(url);
+    if (!target.hash.startsWith("#token=")) return url;
+    target.hash = "";
+    return withSessionToken(target.toString());
+  } catch {
     return url;
   }
 }

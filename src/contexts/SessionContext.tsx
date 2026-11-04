@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import type { AuthenticatedUser } from "../types/auth";
 import {
   adoptSession,
+  configureAuthUrl,
   consumeTokenFromUrl,
   currentUser,
   keepSessionAlive,
@@ -43,6 +44,10 @@ export function SessionProvider({
   authUrl: string;
 }) {
   const [session, setSession] = useState<{ user: AuthenticatedUser | null } | null>(null);
+
+  // Antes de que rendericen los hijos: los enlaces de la cabecera a otras
+  // aplicaciones pasan por el acceso cuando la sesion es renovable (0.25).
+  configureAuthUrl(authUrl);
 
   const alAcceso = useCallback(() => {
     // `replace` y no `assign` para que el boton de atras no devuelva a una

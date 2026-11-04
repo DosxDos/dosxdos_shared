@@ -223,6 +223,23 @@ Una aplicacion con su propio `haCaducado(token)` debe preguntar al paquete
 (`isSessionExpired()`) cuando el token sea el guardado, o tendra el mismo
 bucle con el reloj adelantado.
 
+### Los enlaces a otras aplicaciones con sesion corta (0.25, 05/11/2026)
+
+Una aplicacion con refresh tiene un token de minutos. Pasarselo a otra en el
+fragmento (`withSessionToken`) era darle una sesion de cinco minutos: desde
+facturas, «Portal» dejaba el portal con un token que caducaba enseguida y sin
+refresh con que renovarlo, y pedia la contraseña (04/11/2026). Desde la 0.25:
+
+- con refresh, `withSessionToken(url)` devuelve `<authUrl>/?returnUrl=<url>`:
+  el modulo de acceso tiene la sesion recordada, la renueva y entrega al
+  destino SU token sin pedir nada. `SessionProvider` registra `authUrl`
+  (`configureAuthUrl`); una aplicacion sin el lo llama a mano;
+- `AppHeader` rehace `perfilHref` (`relinkWithSession`), porque las
+  aplicaciones lo calculan antes de montar el proveedor;
+- `consumeTokenFromUrl` no deja que un token sin refresh pise una sesion
+  propia vigente de la misma persona: lo que viene del acceso trae refresh y
+  siempre manda; un enlace de otra aplicacion, no.
+
 ## El menú de usuario y la URL del perfil
 
 Es la única diferencia de verdad entre el portal y los demás módulos, y por eso

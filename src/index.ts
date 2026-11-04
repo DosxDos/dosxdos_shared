@@ -50,6 +50,9 @@ export {
   msUntilExpiry,
   // 0.24 (05/11/2026): la caducidad medida con el reloj del navegador
   isSessionExpired,
+  // 0.25: los enlaces a otras aplicaciones pasan por el acceso si la sesion es corta
+  configureAuthUrl,
+  relinkWithSession,
 } from "./utils/auth/session";
 export type { TokenStore, RenewResult } from "./utils/auth/session";
 export { decodeToken, toAuthenticatedUser, isExpired } from "./utils/auth/jwt";
